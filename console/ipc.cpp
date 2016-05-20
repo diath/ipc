@@ -349,7 +349,7 @@ int main(int argc, const char **argv)
 
 	load();
 
-	const std::string &action = arguments[0];
+	const auto &action = arguments[0];
 	const auto &slice = arguments.size() > 1 ? std::vector<std::string>(arguments.begin() + 1, arguments.end()) : std::vector<std::string>{};
 	if(action == "--add")
 		add(slice);

@@ -1,2 +1,5 @@
-ipc
+build/
+gui/Makefile
+gui/ui_ipc.h
+gui/moc_ipc.cpp
 ipc.cfg
