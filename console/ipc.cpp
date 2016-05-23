@@ -304,7 +304,7 @@ static void launch(const std::vector<std::string> &args)
 		}
 
 		if(fork() == 0)
-			execv(path, nullptr);
+			execl(path, path, nullptr);
 	}
 	else
 		fprintf(stderr, "Failed to open the temporary file.\n");
