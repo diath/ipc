@@ -48,6 +48,7 @@ static void patch(std::string &data, std::string::size_type pos, const std::stri
 MainWindow::MainWindow(QWidget *parent/* = nullptr*/)
 : QMainWindow{parent}
 , manager{this}
+, cwd{0}
 {
 	ui.setupUi(this);
 
@@ -57,13 +58,13 @@ MainWindow::MainWindow(QWidget *parent/* = nullptr*/)
 	connect(ui.btnRemove, SIGNAL(clicked()), this, SLOT(onClientRemove()));
 	connect(ui.btnModify, SIGNAL(clicked()), this, SLOT(onClientModify()));
 
-	// getcwd(cwd, sizeof(cwd));
+	getcwd(cwd, sizeof(cwd));
 	load();
 }
 
 MainWindow::~MainWindow()
 {
-	// chdir(cwd);
+	chdir(cwd);
 	save();
 }
 

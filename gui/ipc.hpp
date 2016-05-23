@@ -38,4 +38,5 @@ class MainWindow: public QMainWindow
 		Ui::MainWindow ui;
 		Manager manager;
 		std::map<std::string, std::string> clients;
+		char cwd[512];
 };
