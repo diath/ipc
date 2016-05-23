@@ -151,9 +151,14 @@ void MainWindow::onLaunch()
 
 	if(host.size() > 17)
 	{
-		// TODO: Resolve the IP address and use that instead
-		QMessageBox::about(this, "Information", "The host name must not exceed 17 characters.");
-		return;
+		struct hostent *he;
+		if((he = gethostbyname(host.c_str())) == nullptr)
+		{
+			QMessageBox::about(this, "Information", "Failed to look up the host address.");
+			return;
+		}
+
+		host = inet_ntoa(*reinterpret_cast<in_addr *>(he->h_addr_list[0]));
 	}
 
 	std::ifstream stream{it->second, std::ios::binary};

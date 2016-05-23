@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <netdb.h>
+#include <arpa/inet.h>
+
 static const std::string RSA_CHUNK[] = {
 	"1321277432058722840622950990822933849527763264961655079678763",
 	"124710459426827943004376449897985582167801707960697037164044904",
@@ -198,9 +201,14 @@ static void launch(const std::vector<std::string> &args)
 
 	if(host.size() > 17)
 	{
-		// TODO: Resolve the IP address and use that instead
-		fprintf(stderr, "The host name must not exceed 17 characters.\n");
-		return;
+		struct hostent *he;
+		if((he = gethostbyname(host.c_str())) == nullptr)
+		{
+			fprintf(stderr, "Failed to look up the host address.\n");
+			return;
+		}
+
+		host = inet_ntoa(*reinterpret_cast<in_addr *>(he->h_addr_list[0]));
 	}
 
 	std::ifstream stream{it->second, std::ios::binary};

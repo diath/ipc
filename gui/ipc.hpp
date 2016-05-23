@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <netdb.h>
+#include <arpa/inet.h>
+
 #include "ui_ipc.h"
 #include "manager.hpp"
 
