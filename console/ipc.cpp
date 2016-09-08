@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -280,21 +281,19 @@ static void launch(const std::vector<std::string> &args)
 		}
 	}
 
-	char *path = new char[18];
-	std::strncpy(path, "/tmp/Tibia_XXXXXX\0", 18);
+	std::unique_ptr<char[]> path{new char[18]};
+	std::strncpy(path.get(), "/tmp/Tibia_XXXXXX\0", 18);
 
-	const auto fd = mkstemp(path);
+	const auto fd = mkstemp(path.get());
 	if(fd == -1)
 	{
 		fprintf(stderr, "Failed to open the temporary file.\n");
-		delete[] path;
 		return;
 	}
 
 	if(fchmod(fd, 0755) == -1)
 	{
 		fprintf(stderr, "Failed to set the permissions for the temporary file.\n");
-		delete[] path;
 		return;
 	}
 
@@ -307,17 +306,14 @@ static void launch(const std::vector<std::string> &args)
 		if(chdir(directory.c_str()) == -1)
 		{
 			fprintf(stdout, "Failed to change the directory.\n");
-			delete[] path;
 			return;
 		}
 
 		if(fork() == 0)
-			execl(path, path, nullptr);
+			execl(path.get(), path.get(), nullptr);
 	}
 	else
 		fprintf(stderr, "Failed to open the temporary file.\n");
-
-	delete[] path;
 }
 
 static void list(const std::vector<std::string> &)
