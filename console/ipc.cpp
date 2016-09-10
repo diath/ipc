@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -7,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <unistd.h>
@@ -14,6 +16,12 @@
 
 #include <netdb.h>
 #include <arpa/inet.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+
+// Chrono ms literal
+using namespace std::chrono_literals;
 
 static const std::string RSA_CHUNK[] = {
 	"1321277432058722840622950990822933849527763264961655079678763",
@@ -44,6 +52,12 @@ static const std::string RSA_OT = ""
 	"6207862794310902180176810615217550567108238764764442605581471797"
 	"07119674283982419152118103759076030616683978566631413";
 
+static const auto MC_SLEEP_TIME = 10ms;
+static const auto MC_TIMEOUT = 5000ms;
+
+static const char *ICON_NAME = "TibiaPlayerLinux";
+static const char *ATOM_NAME = "TIBIARUNNING";
+
 static std::map<std::string, std::string> clients{};
 
 static std::string pad(const std::string &str, std::size_t length)
@@ -60,6 +74,35 @@ static void patch(std::string &data, std::string::size_type pos, const std::stri
 	auto size = replacement.size();
 	for(decltype(size) i = 0; i < size; ++i, ++pos)
 		data[pos] = replacement[i];
+}
+
+static Window FindTibiaWindow(Display *display, Window window)
+{
+	char *propName = nullptr;
+	if (XGetIconName(display, window, &propName) != 0) {
+		if (propName != nullptr && std::strcmp(ICON_NAME, propName) == 0) {
+			XFree(propName);
+			return window;
+		}
+
+		if (propName != nullptr)
+			XFree(propName);
+	}
+
+	Window windowRoot;
+	Window windowParent;
+	Window *children;
+	unsigned int childrenCount;
+
+	if (XQueryTree(display, window, &windowRoot, &windowParent, &children, &childrenCount) != 0 && children != nullptr) {
+		for (unsigned int i = 0; i < childrenCount; ++i) {
+			Window client = FindTibiaWindow(display, children[i]);
+			if(client != 0)
+				return client;
+		}
+	}
+
+	return 0;
 }
 
 static void load()
@@ -309,8 +352,43 @@ static void launch(const std::vector<std::string> &args)
 			return;
 		}
 
-		if(fork() == 0)
+		int fork_pid = fork();
+		if (fork_pid == -1) {
+			fprintf(stderr, "Failed to fork the process.\n");
+		} else if (fork_pid == 0) {
 			execl(path.get(), path.get(), nullptr);
+		} else {
+			Display *display = XOpenDisplay(0);
+			if (!display) {
+				fprintf(stderr, "Failed to open the display. Multiclient functionality will not work\n");
+				return;
+			}
+
+			Window root = XDefaultRootWindow(display);
+			if (!root) {
+				fprintf(stderr, "Failed to find the root WM window.\n");
+				return;
+			}
+
+			Window client;
+			auto passed = 0ms;
+
+			while ((client = FindTibiaWindow(display, root)) == 0) {
+				std::this_thread::sleep_for(MC_SLEEP_TIME);
+				passed += MC_SLEEP_TIME;
+
+				if(passed >= MC_TIMEOUT) {
+					fprintf(stderr, "Failed to find the Tibia window after 5 seconds, giving up.\nMulticlient functionality will not work\n");
+					break;
+				}
+			}
+
+			if (client != 0) {
+				Atom selection = XInternAtom(display, ATOM_NAME, 0);
+				XSetSelectionOwner(display, selection, None, CurrentTime);
+				XGetSelectionOwner(display, selection); // XSetSelectionOwner alone won't work for some reason ¯\_(ツ)_/¯
+			}
+		}
 	}
 	else
 		fprintf(stderr, "Failed to open the temporary file.\n");

@@ -5,8 +5,9 @@
 TEMPLATE = app
 TARGET = ../build/ipc_gui
 INCLUDEPATH += .
-QT += widgets
+QT += widgets x11extras
 OBJECTS_DIR = ../build
+LIBS += -lX11
 
 # Input
 FORMS += ipc.ui manager.ui

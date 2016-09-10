@@ -3,6 +3,7 @@
 #include <QtGui>
 #include <QMessageBox>
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -10,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <unistd.h>
 #include <sys/stat.h>

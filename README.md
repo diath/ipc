@@ -7,7 +7,7 @@ Building (command line)
 ========
 
 * ``cd console/``
-* ``g++ -std=c++14 -o../build/ipc ipc.cpp``
+* ``g++ -std=c++14 -o../build/ipc ipc.cpp -lX11``
 
 Building (GUI)
 ========
