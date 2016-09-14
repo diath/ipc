@@ -20,7 +20,7 @@ void Manager::onBrowse()
 	const auto &path = QFileDialog::getOpenFileName(
 		this, "Browse Clients", "~"
 	);
-	if(!path.size())
+	if (!path.size())
 		return;
 
 	ui.editPath->setText(path);

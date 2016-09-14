@@ -63,7 +63,7 @@ static std::map<std::string, std::string> clients{};
 static std::string pad(const std::string &str, std::size_t length)
 {
 	std::string output = str;
-	while(output.size() < length)
+	while (output.size() < length)
 		output.push_back('\0');
 
 	return output;
@@ -72,7 +72,7 @@ static std::string pad(const std::string &str, std::size_t length)
 static void patch(std::string &data, std::string::size_type pos, const std::string &replacement)
 {
 	auto size = replacement.size();
-	for(decltype(size) i = 0; i < size; ++i, ++pos)
+	for (decltype(size) i = 0; i < size; ++i, ++pos)
 		data[pos] = replacement[i];
 }
 
@@ -97,7 +97,7 @@ static Window FindTibiaWindow(Display *display, Window window)
 	if (XQueryTree(display, window, &windowRoot, &windowParent, &children, &childrenCount) != 0 && children != nullptr) {
 		for (unsigned int i = 0; i < childrenCount; ++i) {
 			Window client = FindTibiaWindow(display, children[i]);
-			if(client != 0)
+			if (client != 0)
 				return client;
 		}
 	}
@@ -108,14 +108,13 @@ static Window FindTibiaWindow(Display *display, Window window)
 static void load()
 {
 	std::ifstream stream{"ipc.cfg"};
-	if(!stream.is_open())
+	if (!stream.is_open())
 		return;
 
 	std::string line{};
-	while(std::getline(stream, line))
-	{
+	while (std::getline(stream, line)) {
 		const auto &position = line.find(":");
-		if(position == std::string::npos)
+		if (position == std::string::npos)
 			continue;
 
 		const auto &name = line.substr(0, position);
@@ -130,10 +129,10 @@ static void load()
 static void save()
 {
 	std::ofstream stream{"ipc.cfg", std::ios::trunc};
-	if(!stream.is_open())
+	if (!stream.is_open())
 		return;
 
-	for(const auto &it: clients)
+	for (const auto &it: clients)
 		stream << it.first << ':' << it.second << '\n';
 
 	stream.close();
@@ -141,28 +140,24 @@ static void save()
 
 static void add(const std::vector<std::string> &args)
 {
-	if(args.size() < 2)
-	{
+	if (args.size() < 2) {
 		fprintf(stderr, "Action 'add' requires two arguments.\n");
 		return;
 	}
 
 	const auto it = clients.find(args[0]);
-	if(it != clients.end())
-	{
+	if (it != clients.end()) {
 		fprintf(stderr, "A client with name '%s' already exists, use the modify action to change the path.\n", args[0].c_str());
 		return;
 	}
 
 	struct stat sb{};
-	if(::stat(args[1].c_str(), &sb) != 0)
-	{
+	if (::stat(args[1].c_str(), &sb) != 0) {
 		fprintf(stdout, "The specified path is not valid.\n");
 		return;
 	}
 
-	if((sb.st_mode & S_IFMT) != S_IFREG)
-	{
+	if ((sb.st_mode & S_IFMT) != S_IFREG) {
 		fprintf(stdout, "The specified path is not valid.\n");
 		return;
 	}
@@ -173,15 +168,13 @@ static void add(const std::vector<std::string> &args)
 
 static void remove(const std::vector<std::string> &args)
 {
-	if(args.size() < 1)
-	{
+	if (args.size() < 1) {
 		fprintf(stderr, "Action 'remove' requires one argument.\n");
 		return;
 	}
 
 	const auto it = clients.find(args[0]);
-	if(it == clients.end())
-	{
+	if (it == clients.end()) {
 		fprintf(stderr, "A client with name '%s' does not exist.\n", args[0].c_str());
 		return;
 	}
@@ -192,15 +185,13 @@ static void remove(const std::vector<std::string> &args)
 
 static void modify(const std::vector<std::string> &args)
 {
-	if(args.size() < 2)
-	{
+	if (args.size() < 2) {
 		fprintf(stderr, "Action 'modify' requires two arguments.\n");
 		return;
 	}
 
 	const auto it = clients.find(args[0]);
-	if(it == clients.end())
-	{
+	if (it == clients.end()) {
 		fprintf(stderr, "A client with name '%s' does not exist.\n", args[0].c_str());
 		return;
 	}
@@ -211,15 +202,13 @@ static void modify(const std::vector<std::string> &args)
 
 static void launch(const std::vector<std::string> &args)
 {
-	if(args.size() < 2)
-	{
+	if (args.size() < 2) {
 		fprintf(stderr, "Action 'launch' requires two arguments.\n");
 		return;
 	}
 
 	const auto it = clients.find(args[0]);
-	if(it == clients.end())
-	{
+	if (it == clients.end()) {
 		fprintf(stderr, "A client with name '%s' does not exist.\n", args[0].c_str());
 		return;
 	}
@@ -230,24 +219,20 @@ static void launch(const std::vector<std::string> &args)
 
 	{
 		const auto &position = args[1].find(':');
-		if(position != std::string::npos)
-		{
+		if (position != std::string::npos) {
 			host = args[1].substr(0, position);
 			port = args[1].substr(position + 1);
-		}
-		else
-		{
+		} else {
 			host = args[1];
 			port = "7171";
 		}
 		directory = it->second.substr(0, it->second.rfind('/'));
 	}
 
-	if(host.size() > 17)
+	if (host.size() > 17)
 	{
 		struct hostent *he;
-		if((he = gethostbyname(host.c_str())) == nullptr)
-		{
+		if ((he = gethostbyname(host.c_str())) == nullptr) {
 			fprintf(stderr, "Failed to look up the host address.\n");
 			return;
 		}
@@ -256,7 +241,7 @@ static void launch(const std::vector<std::string> &args)
 	}
 
 	std::ifstream stream{it->second, std::ios::binary};
-	if(!stream.is_open())
+	if (!stream.is_open())
 	{
 		fprintf(stderr, "Failed to open the client file.\n");
 		return;
@@ -269,12 +254,11 @@ static void launch(const std::vector<std::string> &args)
 
 	{
 		std::string::size_type pos = 0;
-		if((pos = data.find(RSA_CHUNK[0])) != std::string::npos)
+		if ((pos = data.find(RSA_CHUNK[0])) != std::string::npos) {
 			patch(data, pos, pad(RSA_OT, 310));
-		else if((pos = data.find(RSA_CHUNK[1])) != std::string::npos)
+		} else if((pos = data.find(RSA_CHUNK[1])) != std::string::npos) {
 			patch(data, pos, pad(RSA_OT, 310));
-		else
-		{
+		} else {
 			fprintf(stderr, "Failed to patch the RSA key.\n");
 			return;
 		}
@@ -284,41 +268,34 @@ static void launch(const std::vector<std::string> &args)
 		const std::string &host1 = pad(host, 17);
 		const std::string &host2 = pad(host, 19);
 
-		for(const auto &host: HOSTS[0])
-		{
+		for (const auto &host: HOSTS[0]) {
 			std::string::size_type pos = 0;
-			if((pos = data.find(host)) != std::string::npos)
+			if ((pos = data.find(host)) != std::string::npos)
 				patch(data, pos, host1);
 		}
 
-		for(const auto &host: HOSTS[1])
-		{
+		for (const auto &host: HOSTS[1]) {
 			std::string::size_type pos = 0;
-			if((pos = data.find(host)) != std::string::npos)
+			if ((pos = data.find(host)) != std::string::npos)
 				patch(data, pos, host2);
 		}
 	}
 
-	if(port != "7171")
-	{
+	if (port != "7171") {
 		std::string::size_type pos = 0;
 		std::string::size_type base = data.find(host);
-		if((pos = data.find("\x03\x1c\x00\x00", base - 1000)) != std::string::npos)
-		{
+		if ((pos = data.find("\x03\x1c\x00\x00", base - 1000)) != std::string::npos) {
 			uint32_t port_num = std::stoi(port);
 			uint8_t lower = port_num & 0xFF;
 			uint8_t upper = port_num >> 8;
 
-			for(uint8_t i = 0; i < 10; ++i)
-			{
+			for (uint8_t i = 0; i < 10; ++i) {
 				patch(data, pos + 0, std::string(1, lower));
 				patch(data, pos + 1, std::string(1, upper));
 
 				pos += 8;
 			}
-		}
-		else
-		{
+		} else {
 			fprintf(stderr, "Failed to patch the port.\n");
 			return;
 		}
@@ -328,26 +305,22 @@ static void launch(const std::vector<std::string> &args)
 	std::strncpy(path.get(), "/tmp/Tibia_XXXXXX\0", 18);
 
 	const auto fd = mkstemp(path.get());
-	if(fd == -1)
-	{
+	if (fd == -1) {
 		fprintf(stderr, "Failed to open the temporary file.\n");
 		return;
 	}
 
-	if(fchmod(fd, 0755) == -1)
-	{
+	if (fchmod(fd, 0755) == -1) {
 		fprintf(stderr, "Failed to set the permissions for the temporary file.\n");
 		return;
 	}
 
 	FILE *fp = fdopen(fd, "w+");
-	if(fp != nullptr)
-	{
+	if(fp != nullptr) {
 		std::fwrite(data.data(), sizeof(std::string::value_type), data.size(), fp);
 		std::fclose(fp);
 
-		if(chdir(directory.c_str()) == -1)
-		{
+		if (chdir(directory.c_str()) == -1) {
 			fprintf(stdout, "Failed to change the directory.\n");
 			return;
 		}
@@ -377,7 +350,7 @@ static void launch(const std::vector<std::string> &args)
 				std::this_thread::sleep_for(MC_SLEEP_TIME);
 				passed += MC_SLEEP_TIME;
 
-				if(passed >= MC_TIMEOUT) {
+				if (passed >= MC_TIMEOUT) {
 					fprintf(stderr, "Failed to find the Tibia window after 5 seconds, giving up.\nMulticlient functionality will not work\n");
 					break;
 				}
@@ -397,15 +370,14 @@ static void launch(const std::vector<std::string> &args)
 static void list(const std::vector<std::string> &)
 {
 	fprintf(stdout, "Stored configurations:\n");
-	for(const auto &it: clients)
+	for (const auto &it: clients)
 		fprintf(stdout, "\t%s => %s\n", it.first.c_str(), it.second.c_str());
 }
 
 int main(int argc, const char **argv)
 {
 	std::vector<std::string> arguments(argv + 1, argv + argc);
-	if(!arguments.size())
-	{
+	if (!arguments.size()) {
 		fprintf(stdout,
 			"ipc usage:\n"
 			"\t--add name path\n"
@@ -423,8 +395,7 @@ int main(int argc, const char **argv)
 	}
 
 	char cwd[512] = {0};
-	if(getcwd(cwd, sizeof(cwd)) == nullptr)
-	{
+	if (getcwd(cwd, sizeof(cwd)) == nullptr) {
 		fprintf(stderr, "Failed to get the current working directory.\n");
 		return 0;
 	}
@@ -433,18 +404,19 @@ int main(int argc, const char **argv)
 
 	const auto &action = arguments[0];
 	const auto &slice = arguments.size() > 1 ? std::vector<std::string>(arguments.begin() + 1, arguments.end()) : std::vector<std::string>{};
-	if(action == "--add")
+	if (action == "--add") {
 		add(slice);
-	else if(action == "--remove")
+	} else if (action == "--remove") {
 		remove(slice);
-	else if(action == "--modify")
+	} else if (action == "--modify") {
 		modify(slice);
-	else if(action == "--launch")
+	} else if (action == "--launch") {
 		launch(slice);
-	else if(action == "--list")
+	} else if (action == "--list") {
 		list(slice);
-	else
+	} else {
 		fprintf(stderr, "ipc: Unknown option. Run without arguments for help.\n", argv[0]);
+	}
 
 	// NOTE: We need to change the dir back to the original cwd
 	//       otherwise the config would get saved in client's directory

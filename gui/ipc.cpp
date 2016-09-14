@@ -44,7 +44,7 @@ static const char *ATOM_NAME = "TIBIARUNNING";
 static std::string pad(const std::string &str, std::size_t length)
 {
 	std::string output = str;
-	while(output.size() < length)
+	while (output.size() < length)
 		output.push_back('\0');
 
 	return output;
@@ -53,7 +53,7 @@ static std::string pad(const std::string &str, std::size_t length)
 static void patch(std::string &data, std::string::size_type pos, const std::string &replacement)
 {
 	auto size = replacement.size();
-	for(decltype(size) i = 0; i < size; ++i, ++pos)
+	for (decltype(size) i = 0; i < size; ++i, ++pos)
 		data[pos] = replacement[i];
 }
 
@@ -78,7 +78,7 @@ static Window FindTibiaWindow(Display *display, Window window)
 	if (XQueryTree(display, window, &windowRoot, &windowParent, &children, &childrenCount) != 0 && children != nullptr) {
 		for (unsigned int i = 0; i < childrenCount; ++i) {
 			Window client = FindTibiaWindow(display, children[i]);
-			if(client != 0)
+			if (client != 0)
 				return client;
 		}
 	}
@@ -112,14 +112,13 @@ MainWindow::~MainWindow()
 void MainWindow::load()
 {
 	std::ifstream stream{"ipc.cfg"};
-	if(!stream.is_open())
+	if (!stream.is_open())
 		return;
 
 	std::string line{};
-	while(std::getline(stream, line))
-	{
+	while (std::getline(stream, line)) {
 		const auto &position = line.find(":");
-		if(position == std::string::npos)
+		if (position == std::string::npos)
 			continue;
 
 		const auto &name = line.substr(0, position);
@@ -140,10 +139,10 @@ void MainWindow::load()
 void MainWindow::save()
 {
 	std::ofstream stream{"ipc.cfg", std::ios::trunc};
-	if(!stream.is_open())
+	if (!stream.is_open())
 		return;
 
-	for(const auto &it: clients)
+	for (const auto &it: clients)
 		stream << it.first << ':' << it.second << '\n';
 
 	stream.close();
@@ -152,22 +151,19 @@ void MainWindow::save()
 void MainWindow::onLaunch()
 {
 	const auto &text = ui.editAddress->text();
-	if(!text.size())
-	{
+	if (!text.size()) {
 		QMessageBox::information(this, "Information", "Please enter the address.");
 		return;
 	}
 
 	const auto index = ui.choiceClient->currentIndex();
-	if(index == -1)
-	{
+	if (index == -1) {
 		QMessageBox::information(this, "Information", "Please add a client first.");
 		return;
 	}
 
 	const auto it = clients.find(ui.choiceClient->itemText(index).toStdString());
-	if(it == clients.end())
-	{
+	if (it == clients.end()) {
 		QMessageBox::information(this, "Information", "The selected client does not exist.");
 		return;
 	}
@@ -177,24 +173,19 @@ void MainWindow::onLaunch()
 	std::string port{};
 	std::string directory{};
 
-	if(parts.size() == 2)
-	{
+	if (parts.size() == 2) {
 		host = parts[0].toStdString();
 		port = parts[1].toStdString();
-	}
-	else
-	{
+	} else {
 		host = parts[0].toStdString();
 		port = "7171";
 	}
 
 	directory = it->second.substr(0, it->second.rfind('/'));
 
-	if(host.size() > 17)
-	{
+	if (host.size() > 17) {
 		struct hostent *he;
-		if((he = gethostbyname(host.c_str())) == nullptr)
-		{
+		if ((he = gethostbyname(host.c_str())) == nullptr) {
 			QMessageBox::about(this, "Information", "Failed to look up the host address.");
 			return;
 		}
@@ -203,8 +194,7 @@ void MainWindow::onLaunch()
 	}
 
 	std::ifstream stream{it->second, std::ios::binary};
-	if(!stream.is_open())
-	{
+	if (!stream.is_open()) {
 		fprintf(stderr, "Failed to open the client file.\n");
 		return;
 	}
@@ -216,12 +206,11 @@ void MainWindow::onLaunch()
 
 	{
 		std::string::size_type pos = 0;
-		if((pos = data.find(RSA_CHUNK[0])) != std::string::npos)
+		if ((pos = data.find(RSA_CHUNK[0])) != std::string::npos) {
 			patch(data, pos, pad(RSA_OT, 310));
-		else if((pos = data.find(RSA_CHUNK[1])) != std::string::npos)
+		} else if ((pos = data.find(RSA_CHUNK[1])) != std::string::npos) {
 			patch(data, pos, pad(RSA_OT, 310));
-		else
-		{
+		} else {
 			fprintf(stderr, "Failed to patch the RSA key.\n");
 			return;
 		}
@@ -231,41 +220,34 @@ void MainWindow::onLaunch()
 		const std::string &host1 = pad(host, 17);
 		const std::string &host2 = pad(host, 19);
 
-		for(const auto &host: HOSTS[0])
-		{
+		for (const auto &host: HOSTS[0]) {
 			std::string::size_type pos = 0;
-			if((pos = data.find(host)) != std::string::npos)
+			if ((pos = data.find(host)) != std::string::npos)
 				patch(data, pos, host1);
 		}
 
-		for(const auto &host: HOSTS[1])
-		{
+		for (const auto &host: HOSTS[1]) {
 			std::string::size_type pos = 0;
-			if((pos = data.find(host)) != std::string::npos)
+			if ((pos = data.find(host)) != std::string::npos)
 				patch(data, pos, host2);
 		}
 	}
 
-	if(port != "7171")
-	{
+	if (port != "7171") {
 		std::string::size_type pos = 0;
 		std::string::size_type base = data.find(host);
-		if((pos = data.find("\x03\x1c\x00\x00", base - 1000)) != std::string::npos)
-		{
+		if ((pos = data.find("\x03\x1c\x00\x00", base - 1000)) != std::string::npos) {
 			uint32_t port_num = std::stoi(port);
 			uint8_t lower = port_num & 0xFF;
 			uint8_t upper = port_num >> 8;
 
-			for(uint8_t i = 0; i < 10; ++i)
-			{
+			for (uint8_t i = 0; i < 10; ++i) {
 				patch(data, pos + 0, std::string(1, lower));
 				patch(data, pos + 1, std::string(1, upper));
 
 				pos += 8;
 			}
-		}
-		else
-		{
+		} else {
 			fprintf(stderr, "Failed to patch the port.\n");
 			return;
 		}
@@ -275,26 +257,22 @@ void MainWindow::onLaunch()
 	std::strncpy(path.get(), "/tmp/Tibia_XXXXXX\0", 18);
 
 	const auto fd = mkstemp(path.get());
-	if(fd == -1)
-	{
+	if (fd == -1) {
 		fprintf(stderr, "Failed to open the temporary file.\n");
 		return;
 	}
 
-	if(fchmod(fd, 0755) == -1)
-	{
+	if (fchmod(fd, 0755) == -1) {
 		fprintf(stderr, "Failed to set the permissions for the temporary file.\n");
 		return;
 	}
 
 	FILE *fp = fdopen(fd, "w+");
-	if(fp != nullptr)
-	{
+	if (fp != nullptr) {
 		std::fwrite(data.data(), sizeof(std::string::value_type), data.size(), fp);
 		std::fclose(fp);
 
-		if(chdir(directory.c_str()) == -1)
-		{
+		if (chdir(directory.c_str()) == -1) {
 			fprintf(stdout, "Failed to change the directory.\n");
 			return;
 		}
@@ -324,7 +302,7 @@ void MainWindow::onLaunch()
 				std::this_thread::sleep_for(MC_SLEEP_TIME);
 				passed += MC_SLEEP_TIME;
 
-				if(passed >= MC_TIMEOUT) {
+				if (passed >= MC_TIMEOUT) {
 					QMessageBox::about(this, "Information", "Failed to find the Tibia window after 5 seconds, giving up.\nMulticlient functionality will not work\n");
 					break;
 				}
@@ -348,15 +326,13 @@ void MainWindow::onClientAdd()
 	const auto &name = manager.ui.editName->text();
 	const auto &path = manager.ui.editPath->text();
 
-	if(!name.size() || !path.size())
-	{
+	if (!name.size() || !path.size()) {
 		QMessageBox::about(this, "Information", "The specified name or path is invalid.");
 		return;
 	}
 
 	auto it = clients.find(name.toStdString());
-	if(it != clients.end())
-	{
+	if (it != clients.end()) {
 		QMessageBox::about(this, "Information", "A client with this name already exists.");
 		return;
 	}
@@ -376,23 +352,22 @@ void MainWindow::onClientAdd()
 void MainWindow::onClientRemove()
 {
 	auto *item = ui.treeClients->currentItem();
-	if(!item)
-	{
+	if (!item) {
 		QMessageBox::about(this, "Information", "Please select a client first.");
 		return;
 	}
 
-	if(QMessageBox::information(this, "Information", "Are you sure you want to remove this client?", QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
+	if (QMessageBox::information(this, "Information", "Are you sure you want to remove this client?", QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
 		return;
 
 	const auto &name = item->text(0);
 
 	auto it = clients.find(name.toStdString());
-	if(it != clients.end())
+	if (it != clients.end())
 		clients.erase(it);
 
 	auto index = ui.choiceClient->findText(name);
-	if(index != -1)
+	if (index != -1)
 		ui.choiceClient->removeItem(index);
 
 	delete item;
@@ -401,8 +376,7 @@ void MainWindow::onClientRemove()
 void MainWindow::onClientModify()
 {
 	auto *item = ui.treeClients->currentItem();
-	if(!item)
-	{
+	if (!item) {
 		QMessageBox::about(this, "Information", "Please select a client first.");
 		return;
 	}
@@ -418,14 +392,12 @@ void MainWindow::onClientModify()
 	const auto &name = manager.ui.editName->text();
 	const auto &path = manager.ui.editPath->text();
 
-	if(!name.size() || !path.size())
-	{
+	if (!name.size() || !path.size()) {
 		QMessageBox::about(this, "Information", "The specified name or path is invalid.");
 		return;
 	}
 
-	if(nameOrig != name)
-	{
+	if (nameOrig != name) {
 		auto it = clients.find(nameOrig.toStdString());
 		if(it != clients.end())
 			clients.erase(it);
