@@ -308,6 +308,10 @@ static void launch(const std::vector<std::string> &args)
 				Atom selection = XInternAtom(display, ATOM_NAME, 0);
 				XSetSelectionOwner(display, selection, None, CurrentTime);
 				XGetSelectionOwner(display, selection); // XSetSelectionOwner alone won't work for some reason ¯\_(ツ)_/¯
+
+				std::string iconName{ICON_NAME};
+				iconName += std::to_string(fork_pid);
+				XSetIconName(display, client, iconName.c_str());
 			}
 		}
 	}
