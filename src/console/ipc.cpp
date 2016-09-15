@@ -53,14 +53,27 @@ static Window FindTibiaWindow(Display *display, Window window)
 	return 0;
 }
 
-static void load()
+static void load(std::string &lastHost, std::string &lastClient)
 {
 	std::ifstream stream{"ipc.cfg"};
 	if (!stream.is_open())
 		return;
 
 	std::string line{};
+	bool first = true;
+
 	while (std::getline(stream, line)) {
+		if (first) {
+			const auto &position = line.find(";");
+			if (position != std::string::npos) {
+				lastHost = line.substr(0, position);
+				lastClient = line.substr(position + 1);
+			}
+
+			first = false;
+			continue;
+		}
+
 		const auto &position = line.find(":");
 		if (position == std::string::npos)
 			continue;
@@ -74,11 +87,14 @@ static void load()
 	stream.close();
 }
 
-static void save()
+static void save(const std::string &lastHost, const std::string &lastClient)
 {
 	std::ofstream stream{"ipc.cfg", std::ios::trunc};
 	if (!stream.is_open())
 		return;
+
+	// Save the last host & client
+	stream << lastHost << ';' << lastClient << '\n';
 
 	for (const auto &it: clients)
 		stream << it.first << ':' << it.second << '\n';
@@ -148,7 +164,7 @@ static void modify(const std::vector<std::string> &args)
 	fprintf(stdout, "The client has been modified.\n");
 }
 
-static void launch(const std::vector<std::string> &args)
+static void launch(const std::vector<std::string> &args, std::string &lastHost, std::string &lastClient)
 {
 	if (args.size() < 2) {
 		fprintf(stderr, "Action 'launch' requires two arguments.\n");
@@ -164,6 +180,9 @@ static void launch(const std::vector<std::string> &args)
 	std::string host{};
 	std::string port{};
 	std::string directory{};
+
+	lastClient = args[0];
+	lastHost = args[1];
 
 	{
 		const auto &position = args[1].find(':');
@@ -354,6 +373,8 @@ int main(int argc, const char **argv)
 			"\t\tModify the path of existing configuration entry.\n"
 			"\t--launch name host:port\n"
 			"\t\tLaunch the client.\n"
+			"\t--last\n"
+			"\t\tLaunch the client with the most recently used host and client.\n"
 			"\t--list\n"
 			"\t\tDisplay a list of configuration entries.\n"
 		);
@@ -366,7 +387,10 @@ int main(int argc, const char **argv)
 		return 0;
 	}
 
-	load();
+	std::string lastHost{};
+	std::string lastClient{};
+
+	load(lastHost, lastClient);
 
 	const auto &action = arguments[0];
 	const auto &slice = arguments.size() > 1 ? std::vector<std::string>(arguments.begin() + 1, arguments.end()) : std::vector<std::string>{};
@@ -377,7 +401,9 @@ int main(int argc, const char **argv)
 	} else if (action == "--modify") {
 		modify(slice);
 	} else if (action == "--launch") {
-		launch(slice);
+		launch(slice, lastHost, lastClient);
+	} else if (action == "--last") {
+		launch({lastClient, lastHost}, lastHost, lastClient);
 	} else if (action == "--list") {
 		list(slice);
 	} else {
@@ -387,7 +413,7 @@ int main(int argc, const char **argv)
 	// NOTE: We need to change the dir back to the original cwd
 	//       otherwise the config would get saved in client's directory
 	chdir(cwd);
-	save();
+	save(lastHost, lastClient);
 
 	return 0;
 }

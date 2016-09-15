@@ -62,7 +62,22 @@ void MainWindow::load()
 		return;
 
 	std::string line{};
+	std::string lastClient{};
+	bool first = true;
+
 	while (std::getline(stream, line)) {
+		// Restore the last host & client
+		if (first) {
+			const auto &position = line.find(";");
+			if (position != std::string::npos) {
+				ui.editAddress->setText(QString::fromStdString(line.substr(0, position)));
+				lastClient = line.substr(position + 1);
+			}
+
+			first = false;
+			continue;
+		}
+
 		const auto &position = line.find(":");
 		if (position == std::string::npos)
 			continue;
@@ -79,6 +94,11 @@ void MainWindow::load()
 		ui.choiceClient->addItem(QString::fromStdString(name));
 	}
 
+	// NOTE: Needs to be set after we've added the clients to the combo box
+	if (lastClient.size()) {
+		ui.choiceClient->setCurrentIndex(ui.choiceClient->findText(QString::fromStdString(lastClient)));
+	}
+
 	stream.close();
 }
 
@@ -87,6 +107,12 @@ void MainWindow::save()
 	std::ofstream stream{"ipc.cfg", std::ios::trunc};
 	if (!stream.is_open())
 		return;
+
+	// Save the last host & client
+	stream << ui.editAddress->text().toStdString();
+	stream << ';';
+	stream << ui.choiceClient->currentText().toStdString();
+	stream << '\n';
 
 	for (const auto &it: clients)
 		stream << it.first << ':' << it.second << '\n';
