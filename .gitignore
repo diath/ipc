@@ -1,6 +1,6 @@
 build/
-gui/Makefile
-gui/.qmake.stash
-gui/ui_*.h
-gui/moc_*.cpp
+Makefile
+.qmake.stash
+ui_*.h
+moc_*.cpp
 ipc.cfg

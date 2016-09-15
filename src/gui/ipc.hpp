@@ -3,7 +3,6 @@
 #include <QtGui>
 #include <QMessageBox>
 
-#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +17,8 @@
 
 #include <netdb.h>
 #include <arpa/inet.h>
+
+#include "../common/common.hpp"
 
 #include "ui_ipc.h"
 #include "manager.hpp"

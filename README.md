@@ -6,13 +6,12 @@ Tibia IP changer for Linux available as a command line tool and a Qt-based GUI.
 Building (command line)
 ========
 
-* ``cd console/``
-* ``g++ -std=c++14 -o../build/ipc ipc.cpp -lX11``
+* ``mkdir build``
+* ``g++ -std=c++14 -obuild/ipc src/common/common.cpp src/console/ipc.cpp -lX11``
 
 Building (GUI)
 ========
 
-* ``cd gui/``
 * ``qmake``
 * ``make``
 
