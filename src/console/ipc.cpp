@@ -200,6 +200,7 @@ static void launch(const std::vector<std::string> &args)
 		std::istreambuf_iterator<char>()
 	);
 
+	// Patch the RSA
 	{
 		std::string::size_type pos = 0;
 		if ((pos = data.find(RSA_CHUNK[0])) != std::string::npos) {
@@ -212,6 +213,7 @@ static void launch(const std::vector<std::string> &args)
 		}
 	}
 
+	// Patch the host
 	{
 		const std::string &host1 = pad(host, 17);
 		const std::string &host2 = pad(host, 19);
@@ -229,6 +231,7 @@ static void launch(const std::vector<std::string> &args)
 		}
 	}
 
+	// Patch the port
 	if (port != "7171") {
 		std::string::size_type pos = 0;
 		std::string::size_type base = data.find(host);
@@ -247,6 +250,17 @@ static void launch(const std::vector<std::string> &args)
 			fprintf(stderr, "Failed to patch the port.\n");
 			return;
 		}
+	}
+
+	// Patch the config name (if possible)
+	// NOTE: The original config name (Tibia.cfg) gets replaced with the client name
+	//       However we are limited to only 9 characters due to original name
+	//       So we patch it only when the client name is shorter than 10 characters
+	//       We could use the client version instead but we've no means of extracting it atm
+	if (args[0].size() < 10) {
+		std::string::size_type pos = data.find("Tibia.cfg");
+		if (pos != std::string::npos)
+			patch(data, pos, pad(args[0], 9));
 	}
 
 	std::unique_ptr<char[]> path{new char[18]};
